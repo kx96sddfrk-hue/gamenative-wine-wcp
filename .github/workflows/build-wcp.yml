@@ -13,7 +13,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-env:
   WCP_GN_WINE_REPO: https://github.com/GameNative/proton-wine.git
   WCP_GN_WINE_REF: proton_10.0
 
