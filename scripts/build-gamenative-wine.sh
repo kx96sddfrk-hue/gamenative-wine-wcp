@@ -342,7 +342,7 @@ else:
     if old_egl_config_filter in win32u_opengl and "EGL_OPENGL_ES2_BIT" not in win32u_opengl:
         win32u_opengl = win32u_opengl.replace(old_egl_config_filter, new_egl_config_filter, 1)
 
-win32u_opengl_path.write_text(win32u_opengl)
+    win32u_opengl_path.write_text(win32u_opengl)
 
 winex11_opengl_path = source_dir / "dlls" / "winex11.drv" / "opengl.c"
 winex11_opengl = winex11_opengl_path.read_text()
