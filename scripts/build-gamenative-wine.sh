@@ -309,7 +309,10 @@ if old_try_dlopen in loader_main and "../lib/wine/aarch64-unix/ntdll.so" not in 
 loader_main_path.write_text(loader_main)
 
 win32u_opengl_path = source_dir / "dlls" / "win32u" / "opengl.c"
-win32u_opengl = win32u_opengl_path.read_text()
+if not win32u_opengl_path.exists():
+    print("Skipping win32u OpenGL patch: dlls/win32u/opengl.c not found")
+else:
+    win32u_opengl = win32u_opengl_path.read_text()
 
 old_egl_dlopen = """    if (!(funcs->egl_handle = dlopen( SONAME_LIBEGL, RTLD_NOW | RTLD_GLOBAL )))\n    {\n        ERR( \"Failed to load %s: %s\\n\", SONAME_LIBEGL, dlerror() );\n        return FALSE;\n    }\n"""
 
