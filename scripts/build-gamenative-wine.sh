@@ -314,33 +314,33 @@ if not win32u_opengl_path.exists():
 else:
     win32u_opengl = win32u_opengl_path.read_text()
 
-old_egl_dlopen = """    if (!(funcs->egl_handle = dlopen( SONAME_LIBEGL, RTLD_NOW | RTLD_GLOBAL )))\n    {\n        ERR( \"Failed to load %s: %s\\n\", SONAME_LIBEGL, dlerror() );\n        return FALSE;\n    }\n"""
+    old_egl_dlopen = """    if (!(funcs->egl_handle = dlopen( SONAME_LIBEGL, RTLD_NOW | RTLD_GLOBAL )))\n    {\n        ERR( \"Failed to load %s: %s\\n\", SONAME_LIBEGL, dlerror() );\n        return FALSE;\n    }\n"""
 
-new_egl_dlopen = """    if (!(funcs->egl_handle = dlopen( SONAME_LIBEGL, RTLD_NOW | RTLD_GLOBAL )))\n    {\n#ifdef __ANDROID__\n        funcs->egl_handle = dlopen( \"libEGL.so\", RTLD_NOW | RTLD_GLOBAL );\n#endif\n        if (!funcs->egl_handle)\n        {\n            ERR( \"Failed to load %s: %s\\n\", SONAME_LIBEGL, dlerror() );\n            return FALSE;\n        }\n    }\n"""
+    new_egl_dlopen = """    if (!(funcs->egl_handle = dlopen( SONAME_LIBEGL, RTLD_NOW | RTLD_GLOBAL )))\n    {\n#ifdef __ANDROID__\n        funcs->egl_handle = dlopen( \"libEGL.so\", RTLD_NOW | RTLD_GLOBAL );\n#endif\n        if (!funcs->egl_handle)\n        {\n            ERR( \"Failed to load %s: %s\\n\", SONAME_LIBEGL, dlerror() );\n            return FALSE;\n        }\n    }\n"""
 
-if old_egl_dlopen in win32u_opengl and 'dlopen( "libEGL.so", RTLD_NOW | RTLD_GLOBAL )' not in win32u_opengl:
-    win32u_opengl = win32u_opengl.replace(old_egl_dlopen, new_egl_dlopen, 1)
+    if old_egl_dlopen in win32u_opengl and 'dlopen( "libEGL.so", RTLD_NOW | RTLD_GLOBAL )' not in win32u_opengl:
+        win32u_opengl = win32u_opengl.replace(old_egl_dlopen, new_egl_dlopen, 1)
 
-old_egl_client_extensions = """#define CHECK_EXTENSION( ext )                                  \\\n    if (!has_extension( extensions, #ext ))                     \\\n    {                                                           \\\n        ERR( \"Failed to find required extension %s\\n\", #ext );  \\\n        goto failed;                                            \\\n    }\n    CHECK_EXTENSION( EGL_KHR_client_get_all_proc_addresses );\n    CHECK_EXTENSION( EGL_EXT_platform_base );\n#undef CHECK_EXTENSION\n"""
+    old_egl_client_extensions = """#define CHECK_EXTENSION( ext )                                  \\\n    if (!has_extension( extensions, #ext ))                     \\\n    {                                                           \\\n        ERR( \"Failed to find required extension %s\\n\", #ext );  \\\n        goto failed;                                            \\\n    }\n    CHECK_EXTENSION( EGL_KHR_client_get_all_proc_addresses );\n    CHECK_EXTENSION( EGL_EXT_platform_base );\n#undef CHECK_EXTENSION\n"""
 
-new_egl_client_extensions = """#ifdef __ANDROID__\n    if (!has_extension( extensions, \"EGL_KHR_client_get_all_proc_addresses\" ))\n        WARN( \"Missing EGL client extension %s, continuing with Android fallback\\n\",\n              \"EGL_KHR_client_get_all_proc_addresses\" );\n    if (!has_extension( extensions, \"EGL_EXT_platform_base\" ))\n        WARN( \"Missing EGL client extension %s, continuing with Android fallback\\n\",\n              \"EGL_EXT_platform_base\" );\n#else\n    if (!has_extension( extensions, \"EGL_KHR_client_get_all_proc_addresses\" ))\n    {\n        ERR( \"Failed to find required extension %s\\n\", \"EGL_KHR_client_get_all_proc_addresses\" );\n        goto failed;\n    }\n    if (!has_extension( extensions, \"EGL_EXT_platform_base\" ))\n    {\n        ERR( \"Failed to find required extension %s\\n\", \"EGL_EXT_platform_base\" );\n        goto failed;\n    }\n#endif\n"""
+    new_egl_client_extensions = """#ifdef __ANDROID__\n    if (!has_extension( extensions, \"EGL_KHR_client_get_all_proc_addresses\" ))\n        WARN( \"Missing EGL client extension %s, continuing with Android fallback\\n\",\n              \"EGL_KHR_client_get_all_proc_addresses\" );\n    if (!has_extension( extensions, \"EGL_EXT_platform_base\" ))\n        WARN( \"Missing EGL client extension %s, continuing with Android fallback\\n\",\n              \"EGL_EXT_platform_base\" );\n#else\n    if (!has_extension( extensions, \"EGL_KHR_client_get_all_proc_addresses\" ))\n    {\n        ERR( \"Failed to find required extension %s\\n\", \"EGL_KHR_client_get_all_proc_addresses\" );\n        goto failed;\n    }\n    if (!has_extension( extensions, \"EGL_EXT_platform_base\" ))\n    {\n        ERR( \"Failed to find required extension %s\\n\", \"EGL_EXT_platform_base\" );\n        goto failed;\n    }\n#endif\n"""
 
-if old_egl_client_extensions in win32u_opengl and "continuing with Android fallback" not in win32u_opengl:
-    win32u_opengl = win32u_opengl.replace(old_egl_client_extensions, new_egl_client_extensions, 1)
+    if old_egl_client_extensions in win32u_opengl and "continuing with Android fallback" not in win32u_opengl:
+        win32u_opengl = win32u_opengl.replace(old_egl_client_extensions, new_egl_client_extensions, 1)
 
-old_display_funcs_init = """static void display_funcs_init(void)\n{\n    struct egl_platform *egl, *next;\n    UINT status;\n\n    if (egl_init( &driver_funcs )) TRACE( \"Initialized EGL library\\n\" );\n\n    if ((status = user_driver->pOpenGLInit( WINE_OPENGL_DRIVER_VERSION, &display_funcs, &driver_funcs )))\n        WARN( \"Failed to initialize the driver OpenGL functions, status %#x\\n\", status );\n    init_egl_platforms( &display_funcs, driver_funcs );\n"""
+    old_display_funcs_init = """static void display_funcs_init(void)\n{\n    struct egl_platform *egl, *next;\n    UINT status;\n\n    if (egl_init( &driver_funcs )) TRACE( \"Initialized EGL library\\n\" );\n\n    if ((status = user_driver->pOpenGLInit( WINE_OPENGL_DRIVER_VERSION, &display_funcs, &driver_funcs )))\n        WARN( \"Failed to initialize the driver OpenGL functions, status %#x\\n\", status );\n    init_egl_platforms( &display_funcs, driver_funcs );\n"""
 
-old_forced_glx_display_funcs_init = """static void display_funcs_init(void)\n{\n    struct egl_platform *egl, *next;\n    UINT status;\n#ifdef __ANDROID__\n    const char *wine_x11forceglx = getenv( \"WINE_X11FORCEGLX\" );\n    BOOL force_glx = wine_x11forceglx && atoi( wine_x11forceglx );\n#else\n    BOOL force_glx = FALSE;\n#endif\n\n    if (!force_glx && egl_init( &driver_funcs )) TRACE( \"Initialized EGL library\\n\" );\n    else if (force_glx) TRACE( \"Skipping EGL initialization because WINE_X11FORCEGLX is enabled\\n\" );\n\n    if ((status = user_driver->pOpenGLInit( WINE_OPENGL_DRIVER_VERSION, &display_funcs, &driver_funcs )))\n        WARN( \"Failed to initialize the driver OpenGL functions, status %#x\\n\", status );\n    if (!force_glx) init_egl_platforms( &display_funcs, driver_funcs );\n"""
+    old_forced_glx_display_funcs_init = """static void display_funcs_init(void)\n{\n    struct egl_platform *egl, *next;\n    UINT status;\n#ifdef __ANDROID__\n    const char *wine_x11forceglx = getenv( \"WINE_X11FORCEGLX\" );\n    BOOL force_glx = wine_x11forceglx && atoi( wine_x11forceglx );\n#else\n    BOOL force_glx = FALSE;\n#endif\n\n    if (!force_glx && egl_init( &driver_funcs )) TRACE( \"Initialized EGL library\\n\" );\n    else if (force_glx) TRACE( \"Skipping EGL initialization because WINE_X11FORCEGLX is enabled\\n\" );\n\n    if ((status = user_driver->pOpenGLInit( WINE_OPENGL_DRIVER_VERSION, &display_funcs, &driver_funcs )))\n        WARN( \"Failed to initialize the driver OpenGL functions, status %#x\\n\", status );\n    if (!force_glx) init_egl_platforms( &display_funcs, driver_funcs );\n"""
 
-if old_forced_glx_display_funcs_init in win32u_opengl:
-    win32u_opengl = win32u_opengl.replace(old_forced_glx_display_funcs_init, old_display_funcs_init, 1)
+    if old_forced_glx_display_funcs_init in win32u_opengl:
+        win32u_opengl = win32u_opengl.replace(old_forced_glx_display_funcs_init, old_display_funcs_init, 1)
 
-old_egl_config_filter = """    for (i = 0, j = 0; i < count; i++)\n    {\n        funcs->p_eglGetConfigAttrib( egl->display, configs[i], EGL_RENDERABLE_TYPE, &render );\n        if (render & EGL_OPENGL_BIT) configs[j++] = configs[i];\n    }\n    count = j;\n"""
+    old_egl_config_filter = """    for (i = 0, j = 0; i < count; i++)\n    {\n        funcs->p_eglGetConfigAttrib( egl->display, configs[i], EGL_RENDERABLE_TYPE, &render );\n        if (render & EGL_OPENGL_BIT) configs[j++] = configs[i];\n    }\n    count = j;\n"""
 
-new_egl_config_filter = """    for (i = 0, j = 0; i < count; i++)\n    {\n        funcs->p_eglGetConfigAttrib( egl->display, configs[i], EGL_RENDERABLE_TYPE, &render );\n#ifdef __ANDROID__\n        if (render & (EGL_OPENGL_BIT | EGL_OPENGL_ES2_BIT)) configs[j++] = configs[i];\n#else\n        if (render & EGL_OPENGL_BIT) configs[j++] = configs[i];\n#endif\n    }\n    count = j;\n"""
+    new_egl_config_filter = """    for (i = 0, j = 0; i < count; i++)\n    {\n        funcs->p_eglGetConfigAttrib( egl->display, configs[i], EGL_RENDERABLE_TYPE, &render );\n#ifdef __ANDROID__\n        if (render & (EGL_OPENGL_BIT | EGL_OPENGL_ES2_BIT)) configs[j++] = configs[i];\n#else\n        if (render & EGL_OPENGL_BIT) configs[j++] = configs[i];\n#endif\n    }\n    count = j;\n"""
 
-if old_egl_config_filter in win32u_opengl and "EGL_OPENGL_ES2_BIT" not in win32u_opengl:
-    win32u_opengl = win32u_opengl.replace(old_egl_config_filter, new_egl_config_filter, 1)
+    if old_egl_config_filter in win32u_opengl and "EGL_OPENGL_ES2_BIT" not in win32u_opengl:
+        win32u_opengl = win32u_opengl.replace(old_egl_config_filter, new_egl_config_filter, 1)
 
 win32u_opengl_path.write_text(win32u_opengl)
 
