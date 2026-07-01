@@ -223,6 +223,42 @@ if "BOOLEAN WINAPI SystemFunction036(" not in advapi32_crypt:
 
 advapi32_crypt_path.write_text(advapi32_crypt)
 
+ntdll_loader_path = source_dir / "dlls" / "ntdll" / "loader.c"
+ntdll_loader = ntdll_loader_path.read_text()
+
+# Diagnostic logging for Steam / lsteamclient bridge.
+if "GN_DIAG_STEAMBRIDGE" not in ntdll_loader:
+    ntdll_loader = ntdll_loader.replace(
+        'if (use_lsteamclient() && ((is_steamclient32 = !RtlCompareUnicodeStrings(basename, basename_len, L"steamclient", 11, TRUE)) ||',
+        'if (!RtlCompareUnicodeStrings(basename, basename_len, L"steamclient", 11, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"steamclient64", 13, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"gameoverlayrenderer", 19, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"gameoverlayrenderer64", 21, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"lsteamclient", 12, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"secur32", 7, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"crypt32", 7, TRUE) ||\\n'
+        '        !RtlCompareUnicodeStrings(basename, basename_len, L"wintrust", 8, TRUE))\\n'
+        '        ERR("GN_DIAG_STEAMBRIDGE: loading %s flags=%#lx use_lsteamclient=%d\\\\n", debugstr_us(nt_name), flags, use_lsteamclient());\\n\\n'
+        '    if (use_lsteamclient() && ((is_steamclient32 = !RtlCompareUnicodeStrings(basename, basename_len, L"steamclient", 11, TRUE)) ||'
+    )
+
+    ntdll_loader = ntdll_loader.replace(
+        'struct steamclient_setup_trampolines_params params = {.src_mod = *module, .tgt_mod = lsteamclient};\\n'
+        '        WINE_UNIX_CALL( unix_steamclient_setup_trampolines, &params );',
+        'struct steamclient_setup_trampolines_params params = {.src_mod = *module, .tgt_mod = lsteamclient};\\n'
+        '        ERR("GN_DIAG_STEAMBRIDGE: installing trampolines for %s src=%p tgt=%p\\\\n", debugstr_us(nt_name), *module, lsteamclient);\\n'
+        '        WINE_UNIX_CALL( unix_steamclient_setup_trampolines, &params );\\n'
+        '        ERR("GN_DIAG_STEAMBRIDGE: trampoline call completed for %s\\\\n", debugstr_us(nt_name));'
+    )
+
+    ntdll_loader = ntdll_loader.replace(
+        'wm->ldr.Flags |= LDR_DONT_CALL_DLLMAIN;',
+        'ERR("GN_DIAG_STEAMBRIDGE: 64-bit steamclient path, skipping DllMain but resolving imports for %s\\\\n", debugstr_us(nt_name));\\n'
+        '            wm->ldr.Flags |= LDR_DONT_CALL_DLLMAIN;'
+    )
+
+ntdll_loader_path.write_text(ntdll_loader)
+
 loader_main_path = source_dir / "loader" / "main.c"
 loader_main = loader_main_path.read_text()
 
